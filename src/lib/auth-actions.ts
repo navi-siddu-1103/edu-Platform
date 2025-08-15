@@ -9,8 +9,12 @@ import clientPromise from "./mongodb";
 import type { UserRecord } from "firebase-admin/auth";
 
 const SignUpSchema = z.object({
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
   email: z.string().email(),
   password: z.string().min(6),
+  college: z.string().min(1),
+  place: z.string().min(1),
 });
 
 export type FormState = {
@@ -18,7 +22,7 @@ export type FormState = {
   success?: boolean;
 }
 
-async function addUserToDatabase(user: UserRecord) {
+async function addUserToDatabase(user: UserRecord, extraData: { firstName: string; lastName: string; college: string; place: string; }) {
   try {
     const client = await clientPromise;
     const db = client.db();
@@ -27,6 +31,11 @@ async function addUserToDatabase(user: UserRecord) {
     const newUser = {
       uid: user.uid,
       email: user.email,
+      firstName: extraData.firstName,
+      lastName: extraData.lastName,
+      displayName: user.displayName,
+      college: extraData.college,
+      place: extraData.place,
       createdAt: new Date(),
     };
 
@@ -51,16 +60,18 @@ export async function createInitialUserAction(values: z.infer<typeof SignUpSchem
     return { error: "Invalid fields" };
   }
 
-  const { email, password } = validatedFields.data;
+  const { email, password, firstName, lastName, college, place } = validatedFields.data;
+  const displayName = `${firstName} ${lastName}`;
 
   try {
     const userRecord = await auth.createUser({
       email,
       password,
+      displayName,
     });
     
     // After creating the user in Firebase Auth, add them to MongoDB
-    await addUserToDatabase(userRecord);
+    await addUserToDatabase(userRecord, { firstName, lastName, college, place });
 
     return { success: true };
   } catch (error: any) {
