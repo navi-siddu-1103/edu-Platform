@@ -38,6 +38,9 @@ const SignUpSchema = z.object({
   place: z.string().min(1, { message: "Place is required." }),
 });
 
+// Helper function to delay execution
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export default function SignUpPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -62,8 +65,23 @@ export default function SignUpPage() {
         throw new Error(userCreationResult.error || "Failed to create user.");
       }
       
-      // Then, sign in the newly created user on the client to get the ID token
-      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      // Then, attempt to sign in the newly created user on the client to get the ID token
+      // We add a retry mechanism to handle potential replication delays in Firebase Auth.
+      let userCredential;
+      for (let i = 0; i < 3; i++) {
+        try {
+          await delay(1000 * (i + 1)); // Wait 1s, then 2s
+          userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+          break; // If sign-in is successful, break the loop
+        } catch (error) {
+          if (i === 2) throw error; // If it fails on the last attempt, re-throw the error
+        }
+      }
+
+      if (!userCredential) {
+        throw new Error("Could not sign in the new user.");
+      }
+
       const idToken = await userCredential.user.getIdToken();
 
       // Create a session cookie
@@ -81,6 +99,8 @@ export default function SignUpPage() {
       let description = "An unexpected error occurred. Please try again.";
       if (error.code === 'auth/email-already-in-use' || error.message?.includes('EMAIL_EXISTS')) {
         description = "This email is already in use. Please sign in.";
+      } else if (error.code === 'auth/invalid-credential') {
+        description = "Sign-up failed after user creation. Please try signing in.";
       }
       toast({
         variant: "destructive",
