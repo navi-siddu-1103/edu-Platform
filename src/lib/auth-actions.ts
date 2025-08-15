@@ -97,6 +97,7 @@ export async function createSessionAction(idToken: string) {
         cookies().set("session", sessionCookie, { maxAge: expiresIn, httpOnly: true, secure: true });
         return { success: true };
     } catch (error) {
+        console.error("Error creating session cookie:", error);
         return { error: "Failed to create session." };
     }
 }
