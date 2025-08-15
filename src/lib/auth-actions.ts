@@ -5,6 +5,8 @@ import { z } from "zod";
 import { auth } from "@/lib/firebase-admin";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import clientPromise from "./mongodb";
+import type { UserRecord } from "firebase-admin/auth";
 
 const SignUpSchema = z.object({
   email: z.string().email(),
@@ -14,6 +16,28 @@ const SignUpSchema = z.object({
 export type FormState = {
   error?: string;
   success?: boolean;
+}
+
+async function addUserToDatabase(user: UserRecord) {
+  try {
+    const client = await clientPromise;
+    const db = client.db();
+    const usersCollection = db.collection("users");
+
+    const newUser = {
+      uid: user.uid,
+      email: user.email,
+      createdAt: new Date(),
+    };
+
+    await usersCollection.insertOne(newUser);
+    console.log(`User ${user.email} added to MongoDB.`);
+  } catch (error) {
+    console.error("Error adding user to MongoDB:", error);
+    // Depending on the use case, you might want to handle this error more gracefully
+    // For example, by deleting the user from Firebase Auth if the DB insert fails.
+    throw new Error("Failed to save user data.");
+  }
 }
 
 export async function createInitialUserAction(values: z.infer<typeof SignUpSchema>): Promise<FormState> {
@@ -30,16 +54,21 @@ export async function createInitialUserAction(values: z.infer<typeof SignUpSchem
   const { email, password } = validatedFields.data;
 
   try {
-    await auth.createUser({
+    const userRecord = await auth.createUser({
       email,
       password,
     });
+    
+    // After creating the user in Firebase Auth, add them to MongoDB
+    await addUserToDatabase(userRecord);
+
     return { success: true };
   } catch (error: any) {
     if (error.code === 'auth/email-already-exists') {
         return { error: "EMAIL_EXISTS" };
     }
-    return { error: "An unknown error occurred during user creation." };
+    console.error("Error in createInitialUserAction:", error);
+    return { error: error.message || "An unknown error occurred during user creation." };
   }
 }
 
