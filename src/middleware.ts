@@ -1,58 +1,43 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { auth } from "@/lib/firebase-admin";
 
 export async function middleware(request: NextRequest) {
   const session = request.cookies.get("session")?.value;
+  const url = request.nextUrl.clone();
 
-  // If Firebase Admin is not initialized, bypass auth checks.
-  // This is crucial for preventing the app from crashing in environments
-  // where server-side credentials are not available (like the Edge runtime).
-  if (!auth) {
-     if (request.nextUrl.pathname.startsWith('/dashboard')) {
-      return NextResponse.redirect(new URL('/auth/signin', request.url));
-    }
-    return NextResponse.next();
-  }
-
-  // If no session cookie, redirect to sign-in for protected routes
+  // If there's no session cookie, handle redirection for protected routes
   if (!session) {
-    if (request.nextUrl.pathname.startsWith('/dashboard')) {
-      return NextResponse.redirect(new URL('/auth/signin', request.url));
+    if (url.pathname.startsWith('/dashboard')) {
+      url.pathname = '/auth/signin';
+      return NextResponse.redirect(url);
     }
     return NextResponse.next();
   }
 
-  // Verify the session cookie.
-  try {
-    const decodedIdToken = await auth.verifySessionCookie(session, true);
-    
-    // If user is authenticated and tries to access auth pages, redirect to dashboard
-    if (request.nextUrl.pathname.startsWith('/auth')) {
-        return NextResponse.redirect(new URL('/dashboard', request.url));
+  // If there is a session, verify it by calling our API route
+  const response = await fetch(`${url.origin}/api/auth/verify`, {
+    headers: {
+      'Cookie': `session=${session}`
     }
-    
-    // Attach user to request headers for server components
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('X-User-Id', decodedIdToken.uid);
-    requestHeaders.set('X-User-Email', decodedIdToken.email!);
-    
-    return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    });
+  });
 
-  } catch (error) {
-    // Session cookie is invalid. Clear it and redirect to sign-in for protected routes.
-    const response = NextResponse.next();
-    response.cookies.delete("session");
-    
-    if (request.nextUrl.pathname.startsWith('/dashboard')) {
-      return NextResponse.redirect(new URL('/auth/signin', request.url));
-    }
+  const { isAuthenticated } = await response.json();
 
-    return response;
+  // If authenticated and trying to access auth pages, redirect to dashboard
+  if (isAuthenticated && url.pathname.startsWith('/auth')) {
+    url.pathname = '/dashboard';
+    return NextResponse.redirect(url);
   }
+
+  // If not authenticated and trying to access protected dashboard, redirect to sign-in
+  if (!isAuthenticated && url.pathname.startsWith('/dashboard')) {
+    url.pathname = '/auth/signin';
+    // Clear the invalid session cookie
+    const redirectResponse = NextResponse.redirect(url);
+    redirectResponse.cookies.delete("session");
+    return redirectResponse;
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
