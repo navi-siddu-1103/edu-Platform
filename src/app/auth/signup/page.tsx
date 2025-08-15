@@ -67,11 +67,7 @@ export default function SignUpPage() {
         });
         router.push("/dashboard");
       } else {
-        toast({
-          variant: "destructive",
-          title: "Sign up failed",
-          description: sessionResult.error,
-        });
+        throw new Error(sessionResult.error || "Failed to create session.");
       }
     } catch (error: any) {
       let description = "An unexpected error occurred. Please try again.";
