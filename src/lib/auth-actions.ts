@@ -1,3 +1,4 @@
+
 "use server";
 
 import { z } from "zod";
@@ -10,18 +11,13 @@ const SignUpSchema = z.object({
   password: z.string().min(6),
 });
 
-const SignInSchema = z.object({
-    email: z.string().email(),
-    password: z.string().min(1, "Password is required"),
-});
-
-export type SignUpState = {
+export type FormState = {
   error?: string;
   success?: boolean;
 }
 
-export async function signUpAction(prevState: SignUpState, formData: FormData): Promise<SignUpState> {
-  const validatedFields = SignUpSchema.safeParse(Object.fromEntries(formData.entries()));
+export async function createInitialUserAction(values: z.infer<typeof SignUpSchema>): Promise<FormState> {
+  const validatedFields = SignUpSchema.safeParse(values);
 
   if (!validatedFields.success) {
     return { error: "Invalid fields" };
@@ -34,30 +30,13 @@ export async function signUpAction(prevState: SignUpState, formData: FormData): 
       email,
       password,
     });
-    // Note: In a real app, you might want to send a verification email.
-    // For this prototype, we'll consider the user signed up.
-    
-    // To complete the flow, we will sign the user in. We need a custom token for that.
-    // This is a simplified version. A real app would handle this more robustly.
     return { success: true };
   } catch (error: any) {
     if (error.code === 'auth/email-already-exists') {
-        return { error: "Email already in use." };
+        return { error: "EMAIL_EXISTS" };
     }
-    return { error: "An unknown error occurred." };
+    return { error: "An unknown error occurred during user creation." };
   }
-}
-
-export type SignInState = {
-  error?: string;
-  success?: boolean;
-}
-
-export async function signInAction(prevState: SignInState, formData: FormData): Promise<SignInState> {
-  // This function is not directly used by the client-side sign in form
-  // but is here for server-side logic if needed.
-  // The client will handle sign-in and then send the ID token.
-  return { error: "Use client-side sign-in." };
 }
 
 export async function createSessionAction(idToken: string) {

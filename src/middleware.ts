@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { auth } from "./lib/firebase-admin";
+import { auth } from "@/lib/firebase-admin";
 
 export async function middleware(request: NextRequest) {
   const session = request.cookies.get("session")?.value;
@@ -47,4 +47,9 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: ["/dashboard/:path*", "/auth/:path*"],
+  unstable_allowDynamic: [
+    // Using a glob pattern to allow paths like following to be resolved:
+    // "**/node_modules/firebase-admin/lib/auth/auth-api-request.js",
+    "**/node_modules/firebase-admin/**",
+  ],
 };

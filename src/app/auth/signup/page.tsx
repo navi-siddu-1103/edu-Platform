@@ -1,11 +1,12 @@
+
 "use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useFormState } from "react-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -25,42 +26,17 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { signUpAction } from "@/lib/auth-actions";
-import { useEffect, useState } from "react";
+import { auth } from "@/lib/firebase";
+import { createInitialUserAction, createSessionAction } from "@/lib/auth-actions";
 
 const SignUpSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
 });
 
-const initialState = {
-  error: undefined,
-  success: undefined,
-};
-
 export default function SignUpPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [state, formAction] = useFormState(signUpAction, initialState);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    setIsSubmitting(false);
-    if (state?.error) {
-      toast({
-        variant: "destructive",
-        title: "Sign up failed",
-        description: state.error,
-      });
-    }
-    if (state?.success) {
-      toast({
-        title: "Sign up successful!",
-        description: "Please sign in with your new account.",
-      });
-      router.push("/auth/signin");
-    }
-  }, [state, toast, router]);
 
   const form = useForm<z.infer<typeof SignUpSchema>>({
     resolver: zodResolver(SignUpSchema),
@@ -69,12 +45,46 @@ export default function SignUpPage() {
       password: "",
     },
   });
-  
-  const onSubmit = (formData: FormData) => {
-    setIsSubmitting(true);
-    formAction(formData);
-  };
 
+  async function onSubmit(values: z.infer<typeof SignUpSchema>) {
+    try {
+      // First, create user on the server to handle auth records properly
+      const userCreationResult = await createInitialUserAction(values);
+      if (!userCreationResult.success) {
+        throw new Error(userCreationResult.error || "Failed to create user.");
+      }
+      
+      // Then, sign in the user on the client to get the ID token
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const idToken = await userCredential.user.getIdToken();
+
+      // Create a session cookie
+      const sessionResult = await createSessionAction(idToken);
+      if (sessionResult.success) {
+        toast({
+          title: "Sign up successful!",
+          description: "Welcome! You're now logged in.",
+        });
+        router.push("/dashboard");
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Sign up failed",
+          description: sessionResult.error,
+        });
+      }
+    } catch (error: any) {
+      let description = "An unexpected error occurred. Please try again.";
+      if (error.code === 'auth/email-already-in-use' || error.message?.includes('EMAIL_EXISTS')) {
+        description = "This email is already in use. Please sign in.";
+      }
+      toast({
+        variant: "destructive",
+        title: "Sign up failed",
+        description: description,
+      });
+    }
+  }
 
   return (
     <div className="flex items-center justify-center min-h-full">
@@ -86,27 +96,39 @@ export default function SignUpPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={onSubmit}>
-            <div className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" name="password" type="password" required />
-              </div>
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Creating account..." : "Create an account"}
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+               <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="m@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "Creating account..." : "Create an account"}
               </Button>
-            </div>
-          </form>
+            </form>
+          </Form>
           <div className="mt-4 text-center text-sm">
             Already have an account?{" "}
             <Link href="/auth/signin" className="underline">
@@ -118,8 +140,3 @@ export default function SignUpPage() {
     </div>
   );
 }
-
-// Dummy Label component to satisfy TS until we can resolve module issue
-const Label = (props: React.LabelHTMLAttributes<HTMLLabelElement>) => (
-  <label {...props} />
-);
