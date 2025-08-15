@@ -20,6 +20,7 @@ const SignUpSchema = z.object({
 export type FormState = {
   error?: string;
   success?: boolean;
+  customToken?: string;
 }
 
 async function addUserToDatabase(user: UserRecord, extraData: { firstName: string; lastName: string; college: string; place: string; }) {
@@ -73,7 +74,10 @@ export async function createInitialUserAction(values: z.infer<typeof SignUpSchem
     // After creating the user in Firebase Auth, add them to MongoDB
     await addUserToDatabase(userRecord, { firstName, lastName, college, place });
 
-    return { success: true };
+    // Create a custom token for the new user
+    const customToken = await auth.createCustomToken(userRecord.uid);
+
+    return { success: true, customToken: customToken };
   } catch (error: any) {
     if (error.code === 'auth/email-already-exists') {
         return { error: "EMAIL_EXISTS" };
