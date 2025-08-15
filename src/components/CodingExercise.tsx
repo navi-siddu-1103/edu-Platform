@@ -3,38 +3,54 @@
 import type { Exercise } from "@/types";
 import { useState, useEffect } from "react";
 import { useFormState } from "react-dom";
-import { Lightbulb, Terminal, AlertCircle, CheckCircle } from "lucide-react";
+import { Lightbulb, Terminal, AlertCircle, CheckCircle, BrainCircuit } from "lucide-react";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { getCodingHintAction } from "@/lib/actions";
+import { getCodingHintAction, getCodeExplanationAction } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
 
 interface CodingExerciseProps {
   exercise: Exercise;
 }
 
-const initialState = {
+const initialHintState = {
   hint: undefined,
+  error: undefined,
+};
+
+const initialExplanationState = {
+  explanation: undefined,
   error: undefined,
 };
 
 export function CodingExercise({ exercise }: CodingExerciseProps) {
   const [code, setCode] = useState(exercise.codeStub);
   const [output, setOutput] = useState('');
-  const [state, formAction] = useFormState(getCodingHintAction, initialState);
+  const [hintState, hintFormAction] = useFormState(getCodingHintAction, initialHintState);
+  const [explanationState, explanationFormAction] = useFormState(getCodeExplanationAction, initialExplanationState);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (state.error) {
+    if (hintState.error) {
       toast({
         variant: "destructive",
         title: "Oh no! Something went wrong.",
-        description: state.error,
+        description: hintState.error,
       });
     }
-  }, [state.error, toast]);
+  }, [hintState.error, toast]);
+
+  useEffect(() => {
+    if (explanationState.error) {
+      toast({
+        variant: "destructive",
+        title: "Oh no! Something went wrong.",
+        description: explanationState.error,
+      });
+    }
+  }, [explanationState.error, toast]);
 
   const handleRunCode = () => {
     setOutput('Running code...\n(Note: This is a simulated output)\n\nCongratulations! Your code works as expected.');
@@ -68,7 +84,7 @@ export function CodingExercise({ exercise }: CodingExerciseProps) {
           <Button onClick={handleRunCode} className="w-full sm:w-auto bg-primary hover:bg-primary/90">
             Run Code
           </Button>
-          <form action={formAction} className="w-full sm:w-auto">
+          <form action={hintFormAction} className="w-full sm:w-auto">
             <input type="hidden" name="code" value={code} />
             <input type="hidden" name="exerciseDescription" value={exercise.description} />
             <input type="hidden" name="programmingLanguage" value={exercise.language} />
@@ -77,13 +93,35 @@ export function CodingExercise({ exercise }: CodingExerciseProps) {
               Get a Hint
             </Button>
           </form>
+          <form action={explanationFormAction} className="w-full sm:w-auto">
+             <input type="hidden" name="code" value={code} />
+             <input type="hidden" name="exerciseDescription" value={exercise.description} />
+             <input type="hidden" name="programmingLanguage" value={exercise.language} />
+             <Button type="submit" variant="outline" className="w-full">
+                <BrainCircuit className="mr-2 h-4 w-4" />
+                Explain Code
+             </Button>
+          </form>
         </div>
         
-        {state.hint && (
+        {hintState.hint && (
           <Alert className="mb-4 bg-accent/20 border-accent/50">
             <Lightbulb className="h-4 w-4 text-accent-foreground" />
             <AlertTitle>Here's a hint!</AlertTitle>
-            <AlertDescription>{state.hint}</AlertDescription>
+            <AlertDescription>{hintState.hint}</AlertDescription>
+          </Alert>
+        )}
+
+        {explanationState.explanation && (
+          <Alert className="mb-4 bg-blue-500/10 border-blue-500/40">
+            <BrainCircuit className="h-4 w-4 text-blue-600" />
+            <AlertTitle>Code Explanation</AlertTitle>
+            <AlertDescription>
+                <div
+                    className="prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: explanationState.explanation.replace(/\n/g, '<br />') }}
+                />
+            </AlertDescription>
           </Alert>
         )}
 
