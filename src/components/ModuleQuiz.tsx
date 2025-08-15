@@ -1,6 +1,6 @@
 "use client";
 
-import type { Quiz } from "@/types";
+import type { Quiz, QuizQuestion } from "@/types";
 import { useState } from "react";
 import { HelpCircle, Check, X } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
@@ -8,6 +8,10 @@ import { Button } from "./ui/button";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Label } from "./ui/label";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { sendQuizResultEmailAction } from "@/lib/actions";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
+
 
 interface ModuleQuizProps {
   quiz: Quiz;
@@ -20,12 +24,15 @@ export function ModuleQuiz({ quiz }: ModuleQuizProps) {
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [answerStates, setAnswerStates] = useState<Answers>({});
+  const { toast } = useToast();
+  const { user } = useAuth();
+
 
   const handleSelectAnswer = (questionId: string, option: string) => {
     setSelectedAnswers((prev) => ({ ...prev, [questionId]: option }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const newAnswerStates: Answers = {};
     let correctCount = 0;
     quiz.questions.forEach((q) => {
@@ -38,6 +45,39 @@ export function ModuleQuiz({ quiz }: ModuleQuizProps) {
     });
     setAnswerStates(newAnswerStates);
     setSubmitted(true);
+
+    if (user?.email) {
+       const score = (correctCount / quiz.questions.length) * 100;
+       const results = quiz.questions.map(q => ({
+        question: q.text,
+        selectedAnswer: selectedAnswers[q.id],
+        correctAnswer: q.correctAnswer,
+        isCorrect: selectedAnswers[q.id] === q.correctAnswer
+      }));
+
+      const emailData = {
+        userEmail: user.email,
+        userName: user.displayName || user.email.split('@')[0],
+        quizTitle: quiz.id, // Using quiz ID as a title for now
+        score: score,
+        results: results
+      }
+
+      const response = await sendQuizResultEmailAction(emailData);
+
+      if (response.success) {
+        toast({
+            title: "Results Sent!",
+            description: "A copy of your quiz results has been sent to your email.",
+        });
+      } else {
+         toast({
+            variant: "destructive",
+            title: "Email Failed",
+            description: response.error,
+        });
+      }
+    }
   };
   
   const getResultColor = (questionId: string, option: string) => {

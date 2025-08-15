@@ -2,6 +2,7 @@
 
 import { codingHint } from "@/ai/flows/coding-hint";
 import { explainCode } from "@/ai/flows/explain-code";
+import { generateQuizResultEmail } from "@/ai/flows/generate-quiz-result-email";
 import { z } from "zod";
 
 const CodeActionSchema = z.object({
@@ -59,5 +60,53 @@ export async function getCodeExplanationAction(prevState: ExplanationState, form
   } catch (error) {
     console.error(error);
     return { error: 'Failed to get an explanation. Please try again.' };
+  }
+}
+
+// Schema for quiz results email action
+const QuestionResultSchema = z.object({
+  question: z.string(),
+  selectedAnswer: z.string(),
+  correctAnswer: z.string(),
+  isCorrect: z.boolean(),
+});
+
+const EmailActionSchema = z.object({
+  userEmail: z.string().email(),
+  userName: z.string(),
+  quizTitle: z.string(),
+  score: z.number(),
+  results: z.array(QuestionResultSchema),
+});
+
+type EmailState = {
+  success?: boolean;
+  error?: string;
+}
+
+export async function sendQuizResultEmailAction(data: z.infer<typeof EmailActionSchema>): Promise<EmailState> {
+  try {
+    const validatedData = EmailActionSchema.parse(data);
+
+    const emailContent = await generateQuizResultEmail(validatedData);
+
+    // In a real application, you would integrate an email sending service here.
+    // For this example, we'll log the email content to the console.
+    console.log('----- Sending Quiz Result Email -----');
+    console.log(`To: ${validatedData.userEmail}`);
+    console.log(`Subject: ${emailContent.subject}`);
+    console.log('Body:');
+    console.log(emailContent.body);
+    console.log('------------------------------------');
+    
+    // Simulate a successful email send
+    return { success: true };
+
+  } catch (error) {
+    console.error("Error sending quiz result email:", error);
+    if (error instanceof z.ZodError) {
+      return { error: 'Invalid data provided.' };
+    }
+    return { error: 'Failed to send quiz results. Please try again.' };
   }
 }
