@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -62,8 +62,8 @@ export default function SignUpPage() {
         throw new Error(userCreationResult.error || "Failed to create user.");
       }
       
-      // Then, sign in the user on the client to get the ID token
-      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      // Then, sign in the newly created user on the client to get the ID token
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const idToken = await userCredential.user.getIdToken();
 
       // Create a session cookie
