@@ -5,6 +5,8 @@ export async function middleware(request: NextRequest) {
   const session = request.cookies.get("session")?.value;
 
   // If Firebase Admin is not initialized, bypass auth checks.
+  // This is crucial for preventing the app from crashing in environments
+  // where server-side credentials are not available (like the Edge runtime).
   if (!auth) {
      if (request.nextUrl.pathname.startsWith('/dashboard')) {
       return NextResponse.redirect(new URL('/auth/signin', request.url));
