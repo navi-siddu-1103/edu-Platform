@@ -4,16 +4,27 @@ export async function middleware(request: NextRequest) {
   const session = request.cookies.get("session")?.value;
   const url = request.nextUrl.clone();
 
-  // If there's no session cookie, handle redirection for protected routes
+  // Define routes that are considered "authentication" pages
+  const authRoutes = ['/auth/signin', '/auth/signup'];
+  // Define routes that are protected and require authentication
+  const protectedRoutes = ['/dashboard'];
+
+  // Check if the current path starts with any of the protected routes
+  const isProtectedRoute = protectedRoutes.some(route => url.pathname.startsWith(route));
+  const isAuthRoute = authRoutes.includes(url.pathname);
+
+  // If there's no session cookie
   if (!session) {
-    if (url.pathname.startsWith('/dashboard')) {
+    // If trying to access a protected route without a session, redirect to sign-in
+    if (isProtectedRoute) {
       url.pathname = '/auth/signin';
       return NextResponse.redirect(url);
     }
+    // Otherwise, allow access
     return NextResponse.next();
   }
 
-  // If there is a session, verify it by calling our API route
+  // If there is a session, verify it
   const response = await fetch(`${url.origin}/api/auth/verify`, {
     headers: {
       'Cookie': `session=${session}`
@@ -22,19 +33,21 @@ export async function middleware(request: NextRequest) {
 
   const { isAuthenticated } = await response.json();
 
-  // If authenticated and trying to access auth pages, redirect to dashboard
-  if (isAuthenticated && url.pathname.startsWith('/auth')) {
-    url.pathname = '/dashboard';
-    return NextResponse.redirect(url);
-  }
-
-  // If not authenticated and trying to access protected dashboard, redirect to sign-in
-  if (!isAuthenticated && url.pathname.startsWith('/dashboard')) {
-    url.pathname = '/auth/signin';
-    // Clear the invalid session cookie
-    const redirectResponse = NextResponse.redirect(url);
-    redirectResponse.cookies.delete("session");
-    return redirectResponse;
+  if (isAuthenticated) {
+    // If authenticated and trying to access an auth page, redirect to the dashboard
+    if (isAuthRoute) {
+      url.pathname = '/dashboard';
+      return NextResponse.redirect(url);
+    }
+  } else {
+    // If the session is invalid (not authenticated)
+    // and they are on a protected route, redirect to sign-in and clear the bad cookie
+    if (isProtectedRoute) {
+      url.pathname = '/auth/signin';
+      const redirectResponse = NextResponse.redirect(url);
+      redirectResponse.cookies.delete("session");
+      return redirectResponse;
+    }
   }
 
   return NextResponse.next();

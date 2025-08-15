@@ -9,12 +9,12 @@ import clientPromise from "./mongodb";
 import type { UserRecord } from "firebase-admin/auth";
 
 const SignUpSchema = z.object({
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
-  email: z.string().email(),
-  password: z.string().min(6),
-  college: z.string().min(1),
-  place: z.string().min(1),
+  firstName: z.string().min(1, "First name is required."),
+  lastName: z.string().min(1, "Last name is required."),
+  email: z.string().email("Invalid email address."),
+  password: z.string().min(6, "Password must be at least 6 characters."),
+  college: z.string().min(1, "College name is required."),
+  place: z.string().min(1, "Place is required."),
 });
 
 export type FormState = {
@@ -44,9 +44,11 @@ async function addUserToDatabase(user: UserRecord, extraData: { firstName: strin
     console.log(`User ${user.email} added to MongoDB.`);
   } catch (error) {
     console.error("Error adding user to MongoDB:", error);
-    // Depending on the use case, you might want to handle this error more gracefully
-    // For example, by deleting the user from Firebase Auth if the DB insert fails.
-    throw new Error("Failed to save user data.");
+    // If the database insert fails, we should delete the user from Firebase Auth to prevent orphaned accounts.
+    if (auth) {
+      await auth.deleteUser(user.uid);
+    }
+    throw new Error("Failed to save user data. User creation has been rolled back.");
   }
 }
 
@@ -58,7 +60,9 @@ export async function createInitialUserAction(values: z.infer<typeof SignUpSchem
   const validatedFields = SignUpSchema.safeParse(values);
 
   if (!validatedFields.success) {
-    return { error: "Invalid fields" };
+    // Collect all errors into a single string.
+    const errorMessage = validatedFields.error.issues.map(issue => issue.message).join(' ');
+    return { error: errorMessage };
   }
 
   const { email, password, firstName, lastName, college, place } = validatedFields.data;
@@ -71,10 +75,8 @@ export async function createInitialUserAction(values: z.infer<typeof SignUpSchem
       displayName,
     });
     
-    // After creating the user in Firebase Auth, add them to MongoDB
     await addUserToDatabase(userRecord, { firstName, lastName, college, place });
 
-    // Create a custom token for the new user
     const customToken = await auth.createCustomToken(userRecord.uid);
 
     return { success: true, customToken: customToken };
@@ -94,7 +96,7 @@ export async function createSessionAction(idToken: string) {
     try {
         const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
         const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn });
-        cookies().set("session", sessionCookie, { maxAge: expiresIn, httpOnly: true, secure: true });
+        cookies().set("session", sessionCookie, { maxAge: expiresIn, httpOnly: true, secure: true, path: '/' });
         return { success: true };
     } catch (error) {
         console.error("Error creating session cookie:", error);
