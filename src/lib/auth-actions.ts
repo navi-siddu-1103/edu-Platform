@@ -17,6 +17,10 @@ export type FormState = {
 }
 
 export async function createInitialUserAction(values: z.infer<typeof SignUpSchema>): Promise<FormState> {
+  if (!auth) {
+    return { error: "Firebase Admin SDK not initialized." };
+  }
+  
   const validatedFields = SignUpSchema.safeParse(values);
 
   if (!validatedFields.success) {
@@ -40,6 +44,9 @@ export async function createInitialUserAction(values: z.infer<typeof SignUpSchem
 }
 
 export async function createSessionAction(idToken: string) {
+    if (!auth) {
+      return { error: "Firebase Admin SDK not initialized." };
+    }
     try {
         const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
         const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn });
