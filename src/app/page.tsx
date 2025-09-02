@@ -5,7 +5,6 @@ import { ArrowRight, Code, Lightbulb, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { courseCategories } from '@/lib/data';
-import { ConditionalLink } from '@/components/ConditionalLink';
 
 export default function Home() {
   const features = [
@@ -62,9 +61,9 @@ export default function Home() {
         </p>
         <div className="mt-10 flex justify-center gap-4">
           <Button asChild size="lg">
-            <ConditionalLink>
+            <Link href="/auth/signup">
               Start Learning for Free <ArrowRight className="ml-2 h-5 w-5" />
-            </ConditionalLink>
+            </Link>
           </Button>
         </div>
       </section>
@@ -156,9 +155,9 @@ export default function Home() {
          </p>
          <div className="mt-8">
             <Button asChild size="lg">
-                <ConditionalLink>
+                <Link href="/auth/signup">
                   Sign Up Now <ArrowRight className="ml-2 h-5 w-5" />
-                </ConditionalLink>
+                </Link>
             </Button>
          </div>
       </section>
