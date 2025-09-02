@@ -15,8 +15,10 @@ const AuthContext = createContext<AuthContextType>({ user: null, loading: true }
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [clientLoaded, setClientLoaded] = useState(false);
 
   useEffect(() => {
+    setClientLoaded(true);
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
@@ -25,7 +27,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
-  if (loading) {
+  if (loading && clientLoaded) {
     return (
       <div className="flex min-h-screen w-full flex-col items-center justify-center">
         <div className="flex items-center space-x-4">
@@ -38,7 +40,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       </div>
     )
   }
-
 
   return (
     <AuthContext.Provider value={{ user, loading }}>
