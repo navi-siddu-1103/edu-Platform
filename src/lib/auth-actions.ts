@@ -23,35 +23,6 @@ export type FormState = {
   customToken?: string;
 }
 
-async function addUserToDatabase(user: UserRecord, extraData: { firstName: string; lastName: string; college: string; place: string; }) {
-  try {
-    const client = await clientPromise;
-    const db = client.db();
-    const usersCollection = db.collection("users");
-    
-    const newUser = {
-      uid: user.uid,
-      email: user.email,
-      firstName: extraData.firstName,
-      lastName: extraData.lastName,
-      displayName: user.displayName,
-      college: extraData.college,
-      place: extraData.place,
-      createdAt: new Date(),
-    };
-
-    await usersCollection.insertOne(newUser);
-    console.log(`User ${user.email} added to MongoDB.`);
-  } catch (error) {
-    console.error("Error adding user to MongoDB:", error);
-    // If the database insert fails, we should delete the user from Firebase Auth to prevent orphaned accounts.
-    if (auth) {
-      await auth.deleteUser(user.uid);
-    }
-    throw new Error("Failed to save user data. User creation has been rolled back.");
-  }
-}
-
 export async function createInitialUserAction(values: z.infer<typeof SignUpSchema>): Promise<FormState> {
   if (!auth) {
     return { error: "Firebase Admin SDK not initialized." };
@@ -60,27 +31,50 @@ export async function createInitialUserAction(values: z.infer<typeof SignUpSchem
   const validatedFields = SignUpSchema.safeParse(values);
 
   if (!validatedFields.success) {
-    // Collect all errors into a single string.
     const errorMessage = validatedFields.error.issues.map(issue => issue.message).join(' ');
     return { error: errorMessage };
   }
 
   const { email, password, firstName, lastName, college, place } = validatedFields.data;
   const displayName = `${firstName} ${lastName}`;
+  let userRecord: UserRecord | null = null;
 
   try {
-    const userRecord = await auth.createUser({
+    // Step 1: Create user in Firebase Auth
+    userRecord = await auth.createUser({
       email,
       password,
       displayName,
     });
     
-    await addUserToDatabase(userRecord, { firstName, lastName, college, place });
+    // Step 2: Add user to your MongoDB database
+    const client = await clientPromise;
+    const db = client.db();
+    const usersCollection = db.collection("users");
+    
+    const newUser = {
+      uid: userRecord.uid,
+      email: userRecord.email,
+      firstName: firstName,
+      lastName: lastName,
+      displayName: displayName,
+      college: college,
+      place: place,
+      createdAt: new Date(),
+    };
 
+    await usersCollection.insertOne(newUser);
+    
+    // Step 3: Create a custom token for client-side sign-in
     const customToken = await auth.createCustomToken(userRecord.uid);
 
     return { success: true, customToken: customToken };
   } catch (error: any) {
+    // Rollback: If any step fails, delete the user from Firebase Auth if they were created
+    if (userRecord) {
+      await auth.deleteUser(userRecord.uid).catch(delErr => console.error("Failed to rollback Firebase user:", delErr));
+    }
+    
     if (error.code === 'auth/email-already-exists') {
         return { error: "EMAIL_EXISTS" };
     }
