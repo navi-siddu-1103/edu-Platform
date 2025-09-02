@@ -28,13 +28,14 @@ async function addUserToDatabase(user: UserRecord, extraData: { firstName: strin
     const client = await clientPromise;
     const db = client.db();
     const usersCollection = db.collection("users");
+    const displayName = `${extraData.firstName} ${extraData.lastName}`;
 
     const newUser = {
       uid: user.uid,
       email: user.email,
       firstName: extraData.firstName,
       lastName: extraData.lastName,
-      displayName: user.displayName,
+      displayName: displayName,
       college: extraData.college,
       place: extraData.place,
       createdAt: new Date(),
