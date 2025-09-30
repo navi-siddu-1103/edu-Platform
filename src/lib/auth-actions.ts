@@ -20,6 +20,7 @@ const SignUpSchema = z.object({
 export type FormState = {
   error?: string;
   success?: boolean;
+  customToken?: string;
 }
 
 export async function createInitialUserAction(values: z.infer<typeof SignUpSchema>): Promise<FormState> {
@@ -64,12 +65,7 @@ export async function createInitialUserAction(values: z.infer<typeof SignUpSchem
 
     await usersCollection.insertOne(newUser);
     
-    // Step 3: Create a session cookie for the new user
-    // To do this, we need an ID token. We can't mint one on the server.
-    // Instead, we create a custom token, which the client will use to sign in,
-    // and then the client will send the resulting ID token to create the session.
-    // Let's adjust the flow. The server action will create the user and return a custom token.
-
+    // Step 3: Create a custom token for the client to sign in with.
     const customToken = await auth.createCustomToken(userRecord.uid);
 
     return { success: true, customToken };
