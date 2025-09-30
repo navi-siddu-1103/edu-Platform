@@ -53,7 +53,7 @@ export async function createInitialUserAction(values: z.infer<typeof SignUpSchem
     const usersCollection = db.collection("users");
     
     const newUser = {
-      uid: userRecord.uid,
+      uid: userRecord.uid, // Correctly use the UID from the created user record
       email: validatedFields.data.email,
       firstName: validatedFields.data.firstName,
       lastName: validatedFields.data.lastName,
