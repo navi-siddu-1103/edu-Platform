@@ -54,12 +54,12 @@ export async function createInitialUserAction(values: z.infer<typeof SignUpSchem
     
     const newUser = {
       uid: userRecord.uid,
-      email: userRecord.email,
-      firstName: firstName,
-      lastName: lastName,
+      email: validatedFields.data.email,
+      firstName: validatedFields.data.firstName,
+      lastName: validatedFields.data.lastName,
       displayName: displayName,
-      college: college,
-      place: place,
+      college: validatedFields.data.college,
+      place: validatedFields.data.place,
       createdAt: new Date(),
     };
 
