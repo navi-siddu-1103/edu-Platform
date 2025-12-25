@@ -52,15 +52,16 @@ export default function Home() {
   return (
     <div className="container mx-auto">
       {/* Hero Section */}
-      <section className="py-20 text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-primary sm:text-5xl md:text-6xl font-headline">
+      <section className="py-20 text-center relative overflow-hidden">
+        <div className="absolute inset-0 gradient-bg -z-10"></div>
+        <h1 className="text-4xl font-bold tracking-tight gradient-text sm:text-5xl md:text-6xl font-headline animate-in fade-in duration-1000">
           Unlock Your Potential in Computer Science
         </h1>
-        <p className="mt-6 max-w-3xl mx-auto text-lg text-muted-foreground">
+        <p className="mt-6 max-w-3xl mx-auto text-lg text-muted-foreground animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200">
           CS-Academica is your personal guide to mastering complex topics through hands-on coding, smart feedback, and structured learning paths.
         </p>
-        <div className="mt-10 flex justify-center gap-4">
-          <Button asChild size="lg">
+        <div className="mt-10 flex justify-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300">
+          <Button asChild size="lg" className="btn-gradient shadow-lg hover:shadow-xl">
             <Link href="/auth/signup">
               Start Learning for Free <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
@@ -71,14 +72,14 @@ export default function Home() {
       {/* Features Section */}
       <section id="features" className="py-20">
         <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight font-headline">Why Choose CS-Academica?</h2>
+            <h2 className="text-3xl font-bold tracking-tight font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Why Choose CS-Academica?</h2>
             <p className="mt-2 text-muted-foreground">A better way to learn computer science.</p>
         </div>
         <div className="grid gap-8 md:grid-cols-3">
-          {features.map((feature) => (
-            <Card key={feature.title} className="text-center">
+          {features.map((feature, index) => (
+            <Card key={feature.title} className="text-center border-2 card-hover animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: `${index * 100}ms` }}>
               <CardHeader>
-                <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
+                <div className="mx-auto bg-gradient-to-br from-primary/20 to-accent/20 p-4 rounded-full w-fit shadow-lg">
                     {feature.icon}
                 </div>
                 <CardTitle className="pt-4 font-headline">{feature.title}</CardTitle>
@@ -92,17 +93,17 @@ export default function Home() {
       </section>
 
       {/* Course Categories Preview */}
-      <section className="py-20 bg-secondary rounded-lg">
+      <section className="py-20 bg-gradient-to-br from-secondary via-background to-primary/5 rounded-2xl shadow-inner">
         <div className="container mx-auto text-center">
-          <h2 className="text-3xl font-bold tracking-tight font-headline">Explore Our Courses</h2>
+          <h2 className="text-3xl font-bold tracking-tight font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Explore Our Courses</h2>
           <p className="mt-2 text-muted-foreground max-w-2xl mx-auto">
             From algorithms to web development, we have a growing library of courses to help you achieve your goals.
           </p>
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
-            {courseCategories.filter(c => c.courses.length > 0).slice(0, 3).map((category) => (
-              <Card key={category.id} className="overflow-hidden transition-transform duration-300 hover:scale-105 hover:shadow-xl">
+            {courseCategories.filter(c => c.courses.length > 0).slice(0, 3).map((category, index) => (
+              <Card key={category.id} className="overflow-hidden card-hover border-2 shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: `${index * 100}ms` }}>
                 <CardHeader>
-                  <CardTitle className="pt-4 font-headline">{category.title}</CardTitle>
+                  <CardTitle className="pt-4 font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{category.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">{category.description}</p>
@@ -111,7 +112,7 @@ export default function Home() {
             ))}
           </div>
            <div className="mt-12">
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" size="lg" className="border-2 hover:bg-primary hover:text-primary-foreground transition-all duration-300">
                 <Link href="/dashboard">
                 View Full Catalog
                 </Link>
@@ -123,18 +124,18 @@ export default function Home() {
       {/* Testimonials Section */}
       <section id="testimonials" className="py-20">
          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight font-headline">What Our Students Say</h2>
+            <h2 className="text-3xl font-bold tracking-tight font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">What Our Students Say</h2>
             <p className="mt-2 text-muted-foreground">Real stories from learners who leveled up their skills with CS-Academica.</p>
         </div>
         <div className="grid gap-8 md:grid-cols-3">
-            {testimonials.map((testimonial) => (
-            <Card key={testimonial.name}>
+            {testimonials.map((testimonial, index) => (
+            <Card key={testimonial.name} className="border-2 card-hover bg-gradient-to-br from-card to-secondary/50 animate-in fade-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: `${index * 100}ms` }}>
                 <CardContent className="pt-6">
-                <p className="italic text-muted-foreground">"{testimonial.quote}"</p>
+                <p className="italic text-muted-foreground text-lg">"{testimonial.quote}"</p>
                 <div className="mt-4 flex items-center gap-4">
-                    <Avatar>
+                    <Avatar className="ring-2 ring-primary/20">
                         <AvatarImage src={testimonial.avatar} data-ai-hint={testimonial.dataAiHint} alt={testimonial.name} />
-                        <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
+                        <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground">{testimonial.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>
                         <p className="font-semibold">{testimonial.name}</p>
@@ -148,13 +149,14 @@ export default function Home() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-20 text-center">
-         <h2 className="text-3xl font-bold tracking-tight font-headline">Ready to Start Your Journey?</h2>
+      <section className="py-20 text-center relative overflow-hidden">
+         <div className="absolute inset-0 gradient-bg -z-10"></div>
+         <h2 className="text-3xl font-bold tracking-tight font-headline gradient-text">Ready to Start Your Journey?</h2>
          <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
             Create your free account today and get instant access to our courses.
          </p>
          <div className="mt-8">
-            <Button asChild size="lg">
+            <Button asChild size="lg" className="btn-gradient shadow-lg hover:shadow-xl">
                 <Link href="/auth/signup">
                   Sign Up Now <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>

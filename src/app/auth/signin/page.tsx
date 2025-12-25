@@ -76,9 +76,9 @@ export default function SignInPage() {
 
   return (
     <div className="flex items-center justify-center min-h-full">
-      <Card className="mx-auto max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-2xl">Sign In</CardTitle>
+      <Card className="mx-auto max-w-sm border-2 shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Sign In</CardTitle>
           <CardDescription>
             Enter your email below to login to your account
           </CardDescription>
@@ -93,7 +93,7 @@ export default function SignInPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="m@example.com" {...field} />
+                      <Input placeholder="m@example.com" className="transition-all focus:ring-2 focus:ring-primary/50" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -106,20 +106,20 @@ export default function SignInPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <Input type="password" className="transition-all focus:ring-2 focus:ring-primary/50" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+              <Button type="submit" className="w-full btn-gradient shadow-md hover:shadow-lg" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "Signing in..." : "Sign in"}
               </Button>
             </form>
           </Form>
           <div className="mt-4 text-center text-sm">
             Don&apos;t have an account?{" "}
-            <Link href="/auth/signup" className="underline">
+            <Link href="/auth/signup" className="underline text-primary hover:text-accent transition-colors">
               Sign up
             </Link>
           </div>
