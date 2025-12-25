@@ -96,9 +96,9 @@ export default function SignUpPage() {
 
   return (
     <div className="flex items-center justify-center min-h-full py-8">
-      <Card className="mx-auto max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-xl">Sign Up</CardTitle>
+      <Card className="mx-auto max-w-sm border-2 shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Sign Up</CardTitle>
           <CardDescription>
             Enter your information to create an account
           </CardDescription>
@@ -114,7 +114,7 @@ export default function SignUpPage() {
                     <FormItem>
                       <FormLabel>First Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="John" {...field} />
+                        <Input placeholder="John" className="transition-all focus:ring-2 focus:ring-primary/50" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -127,7 +127,7 @@ export default function SignUpPage() {
                     <FormItem>
                       <FormLabel>Last Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Doe" {...field} />
+                        <Input placeholder="Doe" className="transition-all focus:ring-2 focus:ring-primary/50" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -141,7 +141,7 @@ export default function SignUpPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="m@example.com" {...field} />
+                      <Input placeholder="m@example.com" className="transition-all focus:ring-2 focus:ring-primary/50" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -154,7 +154,7 @@ export default function SignUpPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <Input type="password" className="transition-all focus:ring-2 focus:ring-primary/50" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -167,7 +167,7 @@ export default function SignUpPage() {
                   <FormItem>
                     <FormLabel>College</FormLabel>
                     <FormControl>
-                      <Input placeholder="University of Example" {...field} />
+                      <Input placeholder="University of Example" className="transition-all focus:ring-2 focus:ring-primary/50" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -180,20 +180,20 @@ export default function SignUpPage() {
                   <FormItem>
                     <FormLabel>Place</FormLabel>
                     <FormControl>
-                      <Input placeholder="City, Country" {...field} />
+                      <Input placeholder="City, Country" className="transition-all focus:ring-2 focus:ring-primary/50" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+              <Button type="submit" className="w-full btn-gradient shadow-md hover:shadow-lg" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? "Creating account..." : "Create an account"}
               </Button>
             </form>
           </Form>
           <div className="mt-4 text-center text-sm">
             Already have an account?{" "}
-            <Link href="/auth/signin" className="underline">
+            <Link href="/auth/signin" className="underline text-primary hover:text-accent transition-colors">
               Sign in
             </Link>
           </div>
